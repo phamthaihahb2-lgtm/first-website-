@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cộng đồng A5 Valorant</title>
+
+  <style>
+    html, body { height: 100%; margin: 0; background: #000; }
+    * { box-sizing: border-box; }
+
+    /* =========================
+       HOME (Self-hosted video)
+       ========================= */
+    .hero{
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Video cover full screen */
+    .bg-video{
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;        /* phủ kín màn hình */
+      object-position: center;
+      transform: translateZ(0);
+    }
+
+    /* phủ tối để chữ nổi hơn */
+    .overlay{
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      z-index: 1;
+    }
+
+    /* nội dung chữ/nút */
+    .content{
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: grid;
+      place-content: center;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      padding: 24px;
+    }
+
+    .content h1{
+      margin: 0;
+      font-size: clamp(34px, 5vw, 80px);
+      letter-spacing: 1px;
+      font-weight: 900;
+      
+    }
+
+    .content p{
+      margin: 12px 0 0;
+      opacity: .92;
+      font-size: clamp(16px, 1.6vw, 20px);
+      letter-spacing: .8px;
+    }
+
+    .btns{
+      margin-top: 18px;
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      display:inline-block;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background:#fff;
+      color:#000;
+      text-decoration:none;
+      font-weight:700;
+      font-family: Arial, sans-serif;
+      position: relative;   /* cần cho pseudo-elements */
+      overflow: hidden;
+      transform: translateZ(0);
+    }
+
+    .btn.alt{
+      background: transparent;
+      color:#fff;
+      border:1px solid rgba(255,255,255,.7);
+      backdrop-filter: blur(6px);
+    }
+
+    /* Hiệu ứng 3 nút */
+    .btn.fx{
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, background .18s ease, color .18s ease, border-color .18s ease;
+    }
+
+    .btn.fx::before{
+      content:"";
+      position:absolute;
+      top:-40%;
+      left:-120%;
+      width: 120%;
+      height: 180%;
+      background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.55) 35%, transparent 70%);
+      transform: rotate(8deg);
+      opacity: 0;
+      transition: left .55s ease, opacity .2s ease;
+      pointer-events:none;
+    }
+
+    .btn.fx::after{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      border-radius: inherit;
+      box-shadow: 0 0 0 rgba(255,255,255,0);
+      opacity: 0;
+      transition: opacity .18s ease;
+      pointer-events:none;
+    }
+
+    .btn.fx:hover{
+      transform: translateY(-2px) scale(1.03);
+      filter: brightness(1.05);
+      box-shadow: 0 14px 30px rgba(0,0,0,.28);
+    }
+
+    .btn.fx:hover::before{
+      left: 140%;
+      opacity: 1;
+    }
+
+    .btn.fx:hover::after{
+      opacity: 1;
+    }
+
+    .btn.fx:active{
+      transform: translateY(0px) scale(0.99);
+    }
+
+    .btn.fx:hover{
+      background: #fff;
+    }
+    .btn.fx:hover::after{
+      box-shadow: 0 0 22px rgba(255, 85, 85, .35);
+    }
+
+    .btn.alt.fx:hover{
+      background: rgba(255,255,255,.10);
+      border-color: rgba(255,255,255,.95);
+      color:#fff;
+    }
+    .btn.alt.fx:hover::after{
+      box-shadow: 0 0 22px rgba(255,255,255,.25);
+    }
+
+    .btn.fx:focus-visible{
+      outline: 2px solid rgba(255, 85, 85, .85);
+      outline-offset: 3px;
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .btn.fx, .btn.fx::before, .btn.fx::after{ transition: none !important; }
+    }
+
+    /* logo bar ở dưới */
+    .brand-bar{
+      position: absolute;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      pointer-events: none;
+    }
+
+    .brand-logo{
+      width: clamp(180px, 22vw, 520px);
+      height: auto;
+      opacity: .95;
+    }
+
+    @media (max-width: 600px){
+      .brand-bar{ bottom: 18px; gap: 12px; }
+    }
+
+    /* =====================================
+       ABOUT (Ảnh làm background + layout chữ)
+       Giữ tỉ lệ - không crop - không tràn viền
+       ===================================== */
+    .about-bg{
+      width: 100vw;
+      height: 100dvh;
+
+      background-image: url("https://scontent.fhan5-11.fna.fbcdn.net/v/t39.30808-6/614736074_122119181997065559_7213444402386546561_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=127cfc&_nc_ohc=2Nm6RnlQTcoQ7kNvwEQxYhR&_nc_oc=Adle_izGhkKR3Hnr9tlC8moDcWNBSG1a9QzMSaiIxWAS5mdOP7SB-MNsgq8IIffJ77g&_nc_zt=23&_nc_ht=scontent.fhan5-11.fna&_nc_gid=DSSadbjeI6OY-S1CjHfvFA&oh=00_AfqPZ30xo3szBKtuvGm-orsxgcunECaVIuy82oV3dfU3HQ&oe=6968407C");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;      /* ✅ giữ tỉ lệ, không crop */
+      background-color: #e9f2e4;     /* phần dư viền */
+
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;     /* chữ bên phải */
+      padding: clamp(18px, 5vw, 64px);
+
+      font-family: Arial, sans-serif;
+    }
+
+    .about-card{
+      width: min(520px, 92vw);
+      padding: clamp(18px, 3.5vw, 36px);
+      background: rgba(233, 242, 228, 0.88);
+      border-radius: 18px;
+      backdrop-filter: blur(6px);
+    }
+
+    .about-title{
+      margin: 0 0 18px;
+      font-size: clamp(28px, 4.2vw, 56px);
+      letter-spacing: 1px;
+      color: #ff7a1a;
+      font-weight: 900;
+    }
+
+    .about-text{
+      margin: 0 0 18px;
+      font-size: clamp(14px, 1.5vw, 18px);
+      line-height: 1.7;
+      color: #1a1a1a;
+    }
+
+    @media (max-width: 900px){
+      .about-bg{
+        justify-content: center;
+        align-items: flex-end;
+        padding: 18px;
+      }
+      .about-card{
+        margin-bottom: 16px;
+      }
+    }
+
+    /* =========================
+       SECTIONS OTHER
+       ========================= */
+    #players, #highlights{
+      padding: 80px 24px;
+      color:#fff;
+      font-family: Arial, sans-serif;
+    }
+    #players{ background:#111; }
+    #highlights{ background:#0b0b0b; }
+
+    h2{ margin:0 0 12px; font-size: 34px; }
+    p{ line-height: 1.6; }
+  
+    /* =========================
+       PLAYERS (Agents grid + Modal profile)
+       ========================= */
+    #players{
+      background: #0f1720;
+      padding: 70px 24px;
+      color:#fff;
+      font-family: Arial, sans-serif;
+    }
+
+    .players-wrap{
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .agents-title{
+      margin: 0 0 14px;
+      color: #fff;
+      letter-spacing: 1px;
+      font-size: 34px;
+      font-weight: 900;
+    }
+
+    .agents-grid{
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .agent-card{
+      border: 0;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      outline: none;
+      transform: translateZ(0);
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    }
+
+    .agent-card img{
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .agent-name{
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(240,240,240,.92);
+      color: #111;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: .6px;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .agent-card:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 16px 35px rgba(0,0,0,.35);
+      filter: brightness(1.05);
+    }
+
+    .agent-card.is-active{
+      box-shadow: 0 0 0 2px rgba(255,255,255,.85), 0 16px 35px rgba(0,0,0,.35);
+    }
+
+    .agent-card:focus-visible{
+      box-shadow: 0 0 0 2px rgba(255,85,85,.9), 0 16px 35px rgba(0,0,0,.35);
+    }
+
+    .players-hint{
+      opacity: .85;
+      margin: 0 auto 18px;
+      max-width: 1180px;
+    }
+
+    /* ===== Modal / Lightbox ===== */
+    .modal{
+      position: fixed;
+      inset: 0;
+      display: none;
+      z-index: 9999;
+    }
+    .modal.is-open{ display: block; }
+
+    .modal-backdrop{
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.65);
+    }
+
+    .modal-dialog{
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(980px, 92vw);
+      max-height: 88vh;
+      overflow: auto;
+      border-radius: 14px;
+      background: transparent;
+    }
+
+    .modal-close{
+      position: absolute;
+      right: 12px;
+      top: 10px;
+      z-index: 2;
+      border: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      cursor: pointer;
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      font-size: 18px;
+      backdrop-filter: blur(8px);
+    }
+    .modal-close:hover{ background: rgba(255,255,255,.2); }
+
+    .modal-card{
+      background: #fff;
+      border-radius: 14px;
+      padding: 22px;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 22px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      font-family: Arial, sans-serif;
+    }
+
+    .modal-avatar{
+      width: 100%;
+      height: 280px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .modal-nick{
+      font-size: clamp(38px, 5vw, 64px);
+      font-weight: 900;
+      color: #111;
+      line-height: 1;
+      margin-top: 4px;
+    }
+
+    .modal-line{
+      margin: 10px 0 16px;
+      border-bottom: 2px dashed rgba(0,0,0,.25);
+    }
+
+    .modal-meta{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 28px;
+      margin-bottom: 18px;
+    }
+
+    .meta-row{
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 10px;
+      align-items: baseline;
+      color: #111;
+    }
+    .meta-label{ opacity: .65; font-weight: 800; }
+    .meta-value{ font-weight: 900; }
+
+    .modal-desc{
+      color: #111;
+      opacity: .85;
+      line-height: 1.65;
+      font-size: 16px;
+    }
+
+    body.modal-lock{ overflow: hidden; }
+
+    @media (max-width: 980px){
+      .players-wrap{ grid-template-columns: 1fr; }
+      .agents-grid{ grid-template-columns: repeat(3, 1fr); }
+      .modal-card{ grid-template-columns: 220px 1fr; }
+    }
+
+    @media (max-width: 720px){
+      .agents-grid{ grid-template-columns: repeat(2, 1fr); }
+      .modal-card{ grid-template-columns: 1fr; }
+      .modal-meta{ grid-template-columns: 1fr; }
+      .modal-avatar{ height: 260px; }
+    }
+
+  
+    /* ===== OVERRIDE: dàn đều agent cards full màn hình ===== */
+    #players h2{ max-width: none !important; width: 100% !important; }
+    #players .players-hint{ max-width: none !important; width: 100% !important; }
+
+    #players{
+      padding-left: 4vw;
+      padding-right: 4vw;
+    }
+
+    .players-wrap{
+      max-width: none !important;
+      width: 100%;
+      grid-template-columns: 1fr !important; /* bỏ cột phải, full width */
+    }
+
+    .agents-grid{
+      width: 100%;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) !important;
+      gap: 16px !important;
+    }
+
+    .agent-card img{
+      height: clamp(140px, 18vw, 240px) !important;
+    }
+
+  
+    /* =========================
+       HIGHLIGHTS (Controls + no loop)
+       ========================= */
+    #highlights{
+      position: relative;
+      height: 100vh;
+      width: 100%;
+      overflow: hidden;
+      background: #000;
+      padding: 0 !important; /* override padding cũ */
+    }
+
+    .hl-video{
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;   /* full màn hình */
+      object-position: center;
+    }
+
+    .hl-overlay{
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 30% 20%, rgba(255,85,85,.22), transparent 55%),
+                  linear-gradient(to bottom, rgba(0,0,0,.35), rgba(0,0,0,.70));
+      pointer-events: none;
+    }
+
+    .hl-content{
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: grid;
+      place-content: center;
+      text-align: center;
+      padding: 24px;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      pointer-events: none; /* để bấm điều khiển video không bị chắn */
+    }
+
+    .hl-title{
+      margin: 0;
+      font-size: clamp(48px, 7vw, 110px);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 900;
+      text-shadow:
+        0 0 12px rgba(255,85,85,.55),
+        0 0 28px rgba(255,85,85,.35),
+        0 0 60px rgba(255,85,85,.25);
+      animation: hlPulse 2.2s ease-in-out infinite;
+    }
+
+    .hl-title span{
+      background: linear-gradient(90deg, #fff 0%, #ff5555 45%, #fff 90%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 10px rgba(255,85,85,.35));
+    }
+
+    .hl-sub{
+      margin: 14px 0 0;
+      font-size: clamp(14px, 1.6vw, 18px);
+      opacity: .92;
+      letter-spacing: .6px;
+    }
+
+    @keyframes hlPulse{
+      0%, 100%{ transform: scale(1); opacity: 1; }
+      50%{ transform: scale(1.02); opacity: .95; }
+    }
+
+    /* Footer */
+    footer.site-footer{
+      background: #0b0f15;
+      color: rgba(255,255,255,.82);
+      padding: 18px 24px;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      letter-spacing: .3px;
+    }
+    footer.site-footer strong{ color: #fff; }
+
+  
+    /* Hide highlight text/overlay when video starts playing */
+    #highlights.hl-playing .hl-content{
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity .35s ease, transform .35s ease;
+      visibility: hidden;
+    }
+    #highlights.hl-playing .hl-overlay{
+      opacity: 0;
+      transition: opacity .35s ease;
+    }
+
+  </style>
+</head>
+
+<body>
+  <!-- ========= HOME ========= -->
+  <section class="hero" id="home">
+    <!-- VIDEO TỰ HOST (đặt file trong thư mục assets cạnh file html) -->
+    <video class="bg-video" autoplay muted loop playsinline preload="metadata">
+      <source src="assets/bg.webm" type="video/webm">
+      <source src="assets/bg.mp4" type="video/mp4">
+    </video>
+
+    <div class="overlay"></div>
+
+    <div class="content">
+      <h1>CỘNG ĐỒNG A5 VALORANT</h1>
+      <p>HỌC HẾT SỨC, CHƠI HẾT MÌNH</p>
+
+      <!-- 3 nút Home -->
+      <div class="btns">
+        <a class="btn alt fx" href="#about">Về chúng tôi</a>
+        <a class="btn alt fx" href="#players">Hồ sơ tuyển thủ</a>
+        <a class="btn alt fx" href="#highlights">Highlight of the Week</a>
+      </div>
+    </div>
+
+    <!-- Logo dưới -->
+    <div class="brand-bar">
+      <img class="brand-logo"
+        src="https://www.pngall.com/wp-content/uploads/13/Valorant-Logo-PNG-Cutout.png"
+        alt="Valorant logo">
+    </div>
+  </section>
+
+  <!-- ========= ABOUT ========= -->
+  <section id="about" class="about-bg">
+    <div class="about-card">
+      <h2 class="about-title">CHÚNG TÔI LÀ...</h2>
+
+      <p class="about-text">
+        Cộng đồng A5 Valorant - nơi tụi mình gặp nhau không chỉ để chơi, mà để tiến bộ.
+      </p>
+
+      <p class="about-text" style="margin-bottom:0;">
+        Mài rũa kỹ năng, giao lưu văn minh và cùng nhau chinh chiến qua những trận rank căng thẳng.
+      </p>
+    </div>
+  </section>
+
+  
+  <!-- ========= PLAYERS ========= -->
+  <section id="players">
+    <h2 style="max-width:1180px;margin:0 auto 12px;">Hồ sơ tuyển thủ</h2>
+    <p class="players-hint">CLICK vào ảnh sẽ có bất ngờ .</p>
+
+    <div class="players-wrap">
+      <!-- LEFT: AGENTS GRID -->
+      <div class="agents">
+        <h3 class="agents-title">AGENTS</h3>
+
+        <div class="agents-grid" id="agentsGrid">
+          <button class="agent-card" data-agent="clove" type="button">
+            <img src="assets/agents/clove.png" alt="Clove">
+            <span class="agent-name">CLOVE</span>
+          </button>
+
+          <button class="agent-card" data-agent="cypher" type="button">
+            <img src="assets/agents/cypher.png" alt="Cypher">
+            <span class="agent-name">CYPHER</span>
+          </button>
+
+          <button class="agent-card" data-agent="chamber" type="button">
+            <img src="assets/agents/chamber.png" alt="Chamber">
+            <span class="agent-name">CHAMBER</span>
+          </button>
+
+          <button class="agent-card" data-agent="iso" type="button">
+            <img src="assets/agents/iso.png" alt="Iso">
+            <span class="agent-name">ISO</span>
+          </button>
+
+          <button class="agent-card" data-agent="neon" type="button">
+            <img src="assets/agents/neon.PNG" alt="Neon">
+            <span class="agent-name">NEON</span>
+          </button>
+
+          <button class="agent-card" data-agent="reyna" type="button">
+            <img src="assets/agents/reyna.PNG" alt="Reyna">
+            <span class="agent-name">REYNA</span>
+          </button>
+
+          <button class="agent-card" data-agent="omen" type="button">
+            <img src="assets/agents/omen.PNG" alt="Omen">
+            <span class="agent-name">OMEN</span>
+          </button>
+
+          <button class="agent-card" data-agent="phoenix" type="button">
+            <img src="assets/agents/phoenix.PNG" alt="Phoenix">
+            <span class="agent-name">PHOENIX</span>
+          </button>
+
+          <button class="agent-card" data-agent="skye" type="button">
+            <img src="assets/agents/skye.PNG" alt="Skye">
+            <span class="agent-name">SKYE</span>
+          </button>
+
+          <button class="agent-card" data-agent="sova" type="button">
+            <img src="assets/agents/sova.PNG" alt="Sova">
+            <span class="agent-name">SOVA</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: note -->
+      <div style="color: rgba(255,255,255,.9); line-height: 1.7; padding-top: 54px;">
+      
+        
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ========= HIGHLIGHTS ========= -->
+  
+  <!-- ========= HIGHLIGHTS ========= -->
+  <section id="highlights">
+    <!-- Video highlight full màn hình (tự host) -->
+    
+    <video class="hl-video" controls playsinline preload="metadata">
+      
+      <source src="assets/2l.mp4" type="video/mp4">
+      
+    </video>
+
+    <div class="hl-overlay"></div>
+
+    <!-- chữ overlay (không chắn điều khiển video) -->
+    <div class="hl-content">
+      <h2 class="hl-title"><span>HIGHLIGHT</span></h2>
+      <p class="hl-sub">Highlight of the Week • Bấm Play để xem</p>
+    </div>
+  </section>
+
+<footer class="site-footer" id="footer">
+    MADE BY <strong>Phạm Thái Hà 12A5</strong>
+  </footer>
+
+
+  <!-- ===== Player Profile Modal (Lightbox) ===== -->
+  <div class="modal" id="playerModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="1"></div>
+
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="mNick">
+      <button class="modal-close" id="modalCloseBtn" aria-label="Đóng">✕</button>
+
+      <div class="modal-card">
+        <div class="modal-left">
+          <img id="mAvatar" class="modal-avatar" src="" alt="Player avatar">
+        </div>
+
+        <div class="modal-right">
+          <div class="modal-nick" id="mNick">"Nickname"</div>
+          <div class="modal-line"></div>
+
+          <div class="modal-meta">
+            <div class="meta-row">
+              <div class="meta-label">Tên:</div>
+              <div class="meta-value" id="mName">...</div>
+            </div>
+
+            <div class="meta-row">
+              <div class="meta-label">Ngày sinh:</div>
+              <div class="meta-value" id="mDob">...</div>
+            </div>
+
+            <div class="meta-row">
+              <div class="meta-label">Quốc tịch:</div>
+              <div class="meta-value" id="mNation">...</div>
+            </div>
+
+            <div class="meta-row">
+              <div class="meta-label">Vai trò:</div>
+              <div class="meta-value" id="mRole">...</div>
+            </div>
+          </div>
+
+          <div class="modal-desc" id="mDesc">...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    // ===== DATA: map agent -> player profile =====
+    const playersByAgent = {
+      clove: {
+        nick: '"Zikerjok"',
+        name: 'Phạm Tuấn Hưng',
+        dob: '20-03-2008',
+        nation: 'Việt Nam',
+        role: 'IGL',
+        desc: 'Một người đội trưởng mẫu mực luôn giữ một trái tim nóng để dẫn dắt cả đội đến với chiến thắng cuối cùng.',
+        avatar: 'assets/avatar/hung.JPG'
+      },
+      phoenix: {
+        nick: '"trungdzzz"',
+        name: 'Trần Nguyễn Hữu Trung',
+        dob: '20-03-2008',
+        nation: 'Việt Nam',
+        role: 'Sentinels',
+        desc: 'Thủ site cực chắc, địch vào là bỏ site.',
+        avatar: 'assets/avatar/huutrung.JPG'
+      },
+      omen: {
+        nick: '"ocayaz13"',
+        name: 'Nguyễn Tiến Trung',
+        dob: '01-01-2006',
+        nation: 'Việt Nam',
+        role: 'Controller',
+        desc: 'Đồng đội gọi smoke bạn thì nói không.',
+        avatar: 'assets/avatar/tientrung.JPG'
+      },
+      chamber: {
+        nick: '"zxcvbnm"',
+        name: 'Lê Minh Nhật',
+        dob: '22-03-2008',
+        nation: 'Việt Nam',
+        role: 'Duelist',
+        desc: 'Vua calm aim, alexander gọi bằng bố.',
+        avatar: 'assets/avatar/nhat.JPG'
+      },
+      iso: {
+        nick: '"Reiii"',
+        name: 'Đặng Nhật Anh',
+        dob: '13-09-2008',
+        nation: 'Việt Nam',
+        role: 'Duelist',
+        desc: 'Duelist đi giữa đội hình, không hiểu sao sống cuối.',
+        avatar: 'assets/avatar/nhatanh.JPG'
+      },
+      skye: {
+        nick: '"I miss Ly"',
+        name: 'Đỗ Hải An',
+        dob: '10-06-2008',
+        nation: 'Việt Nam',
+        role: 'Initiater',
+        desc: 'Nộ lệ vào site đặt bom, bait đồng đội',
+        avatar: 'assets/avatar/an.JPG'
+      },
+      sova: {
+        nick: '"Smilee"',
+        name: 'Hồ Đăng Hiếu',
+        dob: '20-07-2008',
+        nation: 'Việt Nam',
+        role: 'Initiater',
+        desc: 'Không hiểu sao đồ còn nguyên không thấy dùng.',
+        avatar: 'assets/avatar/hieu.JPG'
+      },
+      neon: {
+        nick: '"The chosen one"',
+        name: 'Phạm Thái Hà',
+        dob: '19-06-2008',
+        nation: 'Việt Nam',
+        role: 'Duelist',
+        desc: 'Kẻ được chọn',
+        avatar: 'assets/avatar/ha.JPG'
+      },
+      reyna: {
+        nick: '"Khang chạy bắn"',
+        name: 'Nguyễn Minh Khang',
+        dob: '27-11-2008',
+        nation: 'Việt Nam',
+        role: 'Duelist',
+        desc: 'Thuần sấy, cái tôi cao ngút trời.',
+        avatar: 'assets/avatar/khang.JPG'
+      },
+      cypher: {
+        nick: '"f0xzy"',
+        name: 'Tô Thiện Nhân',
+        dob: '08-04-2008',
+        nation: 'Việt Nam',
+        role: 'Sentinel',
+        desc: 'Thuần đè aim, farm chỉ số còn team thì kệ',
+        avatar: 'assets/avatar/nhan.JPG'
+      }
+    };
+
+    const modal = document.getElementById('playerModal');
+    const closeBtn = document.getElementById('modalCloseBtn');
+
+    const m = {
+      avatar: document.getElementById('mAvatar'),
+      nick: document.getElementById('mNick'),
+      name: document.getElementById('mName'),
+      dob: document.getElementById('mDob'),
+      nation: document.getElementById('mNation'),
+      role: document.getElementById('mRole'),
+      desc: document.getElementById('mDesc'),
+    };
+
+    function openProfile(agentKey){
+      const data = playersByAgent[agentKey];
+      if(!data) return;
+
+      m.avatar.src = data.avatar;
+      m.nick.textContent = data.nick;
+      m.name.textContent = data.name;
+      m.dob.textContent = data.dob;
+      m.nation.textContent = data.nation;
+      m.role.textContent = data.role;
+      m.desc.textContent = data.desc;
+
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-lock');
+
+      const dialog = modal.querySelector('.modal-dialog');
+      dialog.animate(
+        [{opacity: 0, transform: 'translate(-50%, -48%) scale(.98)'},
+         {opacity: 1, transform: 'translate(-50%, -50%) scale(1)'}],
+        {duration: 160, easing: 'ease-out'}
+      );
+
+      closeBtn.focus();
+    }
+
+    function closeProfile(){
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-lock');
+    }
+
+    closeBtn.addEventListener('click', closeProfile);
+
+    modal.addEventListener('click', (e)=>{
+      if (e.target && e.target.dataset && e.target.dataset.close) closeProfile();
+    });
+
+    window.addEventListener('keydown', (e)=>{
+      if (e.key === 'Escape' && modal.classList.contains('is-open')) closeProfile();
+    });
+
+    const agentsGrid = document.getElementById('agentsGrid');
+    if (agentsGrid){
+      agentsGrid.addEventListener('click', (e)=>{
+        const btn = e.target.closest('.agent-card');
+        if(!btn) return;
+
+        document.querySelectorAll('.agent-card').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+
+        openProfile(btn.dataset.agent);
+      });
+    }
+  </script>
+
+
+  <script>
+    // ===== Highlights: hide title overlay after user plays/clicks =====
+    (function(){
+      const sec = document.getElementById('highlights');
+      if(!sec) return;
+
+      const v = sec.querySelector('video');
+      if(!v) return;
+
+      let hidden = false;
+      const hide = ()=>{
+        if(hidden) return;
+        hidden = true;
+        sec.classList.add('hl-playing');
+      };
+
+      // When user hits play
+      v.addEventListener('play', hide, { once: true });
+
+      // Also hide if user clicks/taps anywhere on highlight section
+      sec.addEventListener('pointerdown', (e)=>{
+        // ignore right-click
+        if(e.button && e.button !== 0) return;
+        hide();
+      }, { once: true });
+    })();
+  </script>
+
+</body>
+</html>
